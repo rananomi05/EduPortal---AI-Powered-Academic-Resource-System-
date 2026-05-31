@@ -8,9 +8,6 @@ import bcrypt from "bcryptjs";
 
 const handler = NextAuth({
   providers: [
-    // ===============================
-    // CREDENTIALS LOGIN
-    // ===============================
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -25,13 +22,8 @@ const handler = NextAuth({
           return null;
         }
 
-        const user = await User.findOne({
-          email: credentials.email,
-        });
-
-        if (!user) return null;
-
-        if (!user.password) return null;
+        const user = await User.findOne({ email: credentials.email });
+        if (!user || !user.password) return null;
 
         const isValid = await bcrypt.compare(
           credentials.password,
@@ -40,18 +32,11 @@ const handler = NextAuth({
 
         if (!isValid) return null;
 
-        // ===============================
-        // ROLE SYSTEM (EMAIL BASED)
-        // ===============================
         const email = credentials.email.toLowerCase();
 
         let role = "student";
-
-        if (email.endsWith("@admin.com")) {
-          role = "admin";
-        } else if (email.endsWith("@faculty.com")) {
-          role = "faculty";
-        }
+        if (email.endsWith("@admin.com")) role = "admin";
+        else if (email.endsWith("@faculty.com")) role = "faculty";
 
         return {
           id: user._id.toString(),
@@ -62,39 +47,27 @@ const handler = NextAuth({
       },
     }),
 
-    // ===============================
-    // GITHUB LOGIN
-    // ===============================
     GitHubProvider({
       clientId: process.env.GITHUB_ID!,
       clientSecret: process.env.GITHUB_SECRET!,
     }),
 
-    // ===============================
-    // GOOGLE LOGIN
-    // ===============================
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
   ],
 
-  // ===============================
-  // SESSION CONFIG
-  // ===============================
   session: {
     strategy: "jwt",
   },
 
   secret: process.env.NEXTAUTH_SECRET,
 
-  // ===============================
-  // CALLBACKS
-  // ===============================
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = user.role;
+        token.role = (user as any).role;
         token.id = user.id;
       }
       return token;
@@ -103,15 +76,12 @@ const handler = NextAuth({
     async session({ session, token }) {
       if (session.user) {
         session.user.role = token.role as string;
-        (session.user as any).id = token.id;
+        session.user.id = token.id as string;
       }
       return session;
     },
   },
 
-  // ===============================
-  // CUSTOM LOGIN PAGE
-  // ===============================
   pages: {
     signIn: "/login",
   },
