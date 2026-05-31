@@ -1,4 +1,4 @@
-
+/// <reference types="next" />
 
 import { DefaultSession } from "next-auth";
 
