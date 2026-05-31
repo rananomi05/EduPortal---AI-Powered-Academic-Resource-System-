@@ -32,17 +32,11 @@ const handler = NextAuth({
 
         if (!isValid) return null;
 
-        const email = credentials.email.toLowerCase();
-
-        let role = "student";
-        if (email.endsWith("@admin.com")) role = "admin";
-        else if (email.endsWith("@faculty.com")) role = "faculty";
-
         return {
           id: user._id.toString(),
           name: user.name,
           email: user.email,
-          role,
+          role: user.role || "student", // IMPORTANT: from DB
         };
       },
     }),
@@ -67,16 +61,16 @@ const handler = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
+        token.id = (user as any).id;
         token.role = (user as any).role;
-        token.id = user.id;
       }
       return token;
     },
 
     async session({ session, token }) {
       if (session.user) {
-        session.user.role = token.role as string;
         session.user.id = token.id as string;
+        session.user.role = token.role as string;
       }
       return session;
     },
