@@ -32,11 +32,22 @@ const handler = NextAuth({
 
         if (!isValid) return null;
 
+        // ✅ EMAIL-BASED ROLE SYSTEM (YOUR OLD LOGIC)
+        const email = credentials.email.toLowerCase();
+
+        let role = "student";
+
+        if (email.endsWith("@admin.com")) {
+          role = "admin";
+        } else if (email.endsWith("@faculty.com")) {
+          role = "faculty";
+        }
+
         return {
           id: user._id.toString(),
           name: user.name,
           email: user.email,
-          role: user.role || "student", // IMPORTANT: from DB
+          role,
         };
       },
     }),
